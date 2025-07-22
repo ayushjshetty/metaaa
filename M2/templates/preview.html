@@ -1,0 +1,81 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <title>MetaInspector - Metadata Preview</title>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css">
+    <link rel="stylesheet"
+        href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.7.0/styles/atom-one-dark.min.css">
+    <link rel="stylesheet" href="/static/theme.css">
+</head>
+
+<body class="bg-dark text-light classy-bg-full">
+    <div class="classy-bg-animated"></div>
+    <nav class="classy-navbar">
+        <div class="classy-navbar-logo">
+            <svg width="40" height="40" viewBox="0 0 80 80" fill="none" xmlns="http://www.w3.org/2000/svg">
+                <circle cx="40" cy="40" r="36" stroke="#ffffff" stroke-width="4" fill="#0a0a0a" />
+                <path d="M25 55L40 25L55 55" stroke="#cccccc" stroke-width="4" stroke-linecap="round"
+                    stroke-linejoin="round" />
+                <circle cx="40" cy="40" r="8" fill="#ffffff" />
+            </svg>
+        </div>
+        <span class="classy-navbar-title">MetaInspector</span>
+    </nav>
+    <div class="d-flex flex-column justify-content-center align-items-center min-vh-100 w-100">
+        <div class="classy-container classy-container-full p-4">
+            <h1 class="mb-4 text-center classy-title">Metadata Preview</h1>
+            <form id="formatForm" method="post" action="/preview" class="classy-form">
+                <input type="hidden" name="metadata" id="metadata" value='{{ metadata|tojson }}'>
+                <div class="row mb-3 align-items-end">
+                    <div class="col-md-4">
+                        <label for="format" class="form-label">Format:</label>
+                        <select class="form-select classy-select" id="format" name="format">
+                            <option value="json" {% if format=='json' %}selected{% endif %}>JSON</option>
+                            <option value="yaml" {% if format=='yaml' %}selected{% endif %}>YAML</option>
+                            <option value="txt" {% if format=='txt' %}selected{% endif %}>Plain Text</option>
+                        </select>
+                    </div>
+                    <div class="col-md-4">
+                        <button type="button" class="btn btn-secondary classy-btn w-100"
+                            id="refreshPreview">Preview</button>
+                    </div>
+                    <div class="col-md-4 text-end">
+                        <form method="post" action="/download">
+                            <input type="hidden" name="metadata" value='{{ metadata|tojson }}'>
+                            <input type="hidden" name="format" id="downloadFormat" value="{{ format }}">
+                            <button type="submit" class="btn btn-success classy-btn">Download</button>
+                        </form>
+                    </div>
+                </div>
+            </form>
+            <div class="mb-3 classy-preview-panel">
+                <pre><code id="previewPanel" class="hljs classy-code">{{ metadata|tojson(indent=2) }}</code></pre>
+            </div>
+            <a href="/" class="btn btn-link classy-link">Back</a>
+        </div>
+    </div>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.7.0/highlight.min.js"></script>
+    <script>hljs.highlightAll();</script>
+    <script>
+        document.getElementById('refreshPreview').onclick = function () {
+            var form = document.getElementById('formatForm');
+            var format = document.getElementById('format').value;
+            var metadata = document.getElementById('metadata').value;
+            fetch('/preview', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+                body: 'metadata=' + encodeURIComponent(metadata) + '&format=' + encodeURIComponent(format)
+            })
+                .then(response => response.json())
+                .then(data => {
+                    document.getElementById('previewPanel').textContent = data.preview;
+                    hljs.highlightElement(document.getElementById('previewPanel'));
+                    document.getElementById('downloadFormat').value = format;
+                });
+        };
+    </script>
+</body>
+
+</html>
